@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - ArtfromTheHeart</title>
+    <link rel="stylesheet" href="admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <h1>ArtfromTheHeart Admin Panel</h1>
+            <div class="header-actions">
+                <a href="index.html" class="btn-secondary">View Site</a>
+                <button id="logoutBtn" class="btn-secondary">Logout</button>
+            </div>
+        </header>
+
+        <div class="admin-content">
+            <!-- Navigation Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+                <button class="tab-btn" data-tab="products">Products</button>
+                <button class="tab-btn" data-tab="orders">Orders</button>
+                <button class="tab-btn" data-tab="settings">Settings</button>
+            </div>
+
+            <!-- Dashboard Tab -->
+            <div id="dashboardTab" class="tab-content active">
+                <div class="section-header">
+                    <h2>Dashboard Overview</h2>
+                    <div class="dashboard-actions">
+                        <button id="refreshDashboard" class="btn-secondary">Refresh</button>
+                        <button id="exportAllData" class="btn-secondary">Export All Data</button>
+                    </div>
+                </div>
+
+                <!-- Statistics Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📦</div>
+                        <div class="stat-content">
+                            <h3 id="totalProducts">0</h3>
+                            <p>Total Products</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🛒</div>
+                        <div class="stat-content">
+                            <h3 id="totalOrders">0</h3>
+                            <p>Total Orders</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💰</div>
+                        <div class="stat-content">
+                            <h3 id="totalRevenue">$0.00</h3>
+                            <p>Total Revenue</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⏳</div>
+                        <div class="stat-content">
+                            <h3 id="pendingOrders">0</h3>
+                            <p>Pending Orders</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Orders -->
+                <div class="dashboard-section">
+                    <h3>Recent Orders</h3>
+                    <div id="recentOrders" class="recent-orders-list">
+                        <!-- Recent orders will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Order Status Breakdown -->
+                <div class="dashboard-section">
+                    <h3>Order Status Breakdown</h3>
+                    <div id="orderStatusChart" class="status-chart">
+                        <!-- Status breakdown will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products Tab -->
+            <div id="productsTab" class="tab-content">
+                <div class="section-header">
+                    <h2>Product Management</h2>
+                    <div class="section-actions">
+                        <button id="addProductBtn" class="btn-primary">+ Add New Product</button>
+                        <button id="bulkDeleteProducts" class="btn-danger" style="display: none;">Delete Selected</button>
+                    </div>
+                </div>
+
+                <!-- Products Search and Filter -->
+                <div class="products-filter">
+                    <input type="text" id="productSearch" placeholder="Search products by name, description, or materials...">
+                    <button id="clearProductSearch" class="btn-secondary">Clear</button>
+                </div>
+
+                <!-- Add/Edit Product Form -->
+                <div id="productFormModal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 id="formTitle">Add New Product</h3>
+                            <button class="close-btn" id="closeModal">&times;</button>
+                        </div>
+                        <form id="productForm">
+                            <input type="hidden" id="productId">
+                            
+                            <div class="form-group">
+                                <label for="productName">Product Name *</label>
+                                <input type="text" id="productName" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="productPrice">Price *</label>
+                                <input type="text" id="productPrice" placeholder="$45.00" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="productImage">Image URL *</label>
+                                <input type="url" id="productImage" placeholder="https://..." required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="productDescription">Description *</label>
+                                <textarea id="productDescription" rows="4" required></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="productMaterials">Materials (comma-separated)</label>
+                                <input type="text" id="productMaterials" placeholder="Stoneware Clay, Handmade">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="productSize">Size</label>
+                                <input type="text" id="productSize" placeholder="8&quot; H × 5&quot; W">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="productDetails">Additional Details (one per line)</label>
+                                <textarea id="productDetails" rows="3" placeholder="Handmade in USA&#10;Food Safe"></textarea>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
+                                <button type="submit" class="btn-primary">Save Product</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Products List -->
+                <div id="productsList" class="products-grid">
+                    <!-- Products will be loaded here dynamically -->
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settingsTab" class="tab-content">
+                <div class="section-header">
+                    <h2>Settings</h2>
+                </div>
+
+                <div class="settings-container">
+                    <div class="settings-section">
+                        <h3>Change Admin Password</h3>
+                        <form id="changePasswordForm">
+                            <div class="form-group">
+                                <label for="currentPassword">Current Password *</label>
+                                <input type="password" id="currentPassword" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="newPassword">New Password *</label>
+                                <input type="password" id="newPassword" required minlength="6">
+                            </div>
+                            <div class="form-group">
+                                <label for="confirmPassword">Confirm New Password *</label>
+                                <input type="password" id="confirmPassword" required>
+                            </div>
+                            <div id="passwordError" class="error-message" style="display: none;"></div>
+                            <button type="submit" class="btn-primary">Change Password</button>
+                        </form>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Data Management</h3>
+                        <div class="settings-actions">
+                            <button id="exportProducts" class="btn-secondary">Export Products (JSON)</button>
+                            <button id="exportOrders" class="btn-secondary">Export Orders (JSON)</button>
+                            <button id="exportOrdersCSV" class="btn-secondary">Export Orders (CSV)</button>
+                            <button id="importData" class="btn-secondary">Import Data</button>
+                            <input type="file" id="importFile" accept=".json" style="display: none;">
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Danger Zone</h3>
+                        <div class="danger-zone">
+                            <p>These actions cannot be undone. Please be careful.</p>
+                            <button id="clearAllData" class="btn-danger">Clear All Data</button>
+                            <button id="resetToDefaults" class="btn-danger">Reset to Default Products</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders Tab -->
+            <div id="ordersTab" class="tab-content">
+                <div class="section-header">
+                    <h2>Order Management</h2>
+                    <button id="addOrderBtn" class="btn-primary">+ Add Manual Order</button>
+                </div>
+
+                <!-- Add Order Form Modal -->
+                <div id="orderFormModal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>Add Manual Order</h3>
+                            <button class="close-btn" id="closeOrderModal">&times;</button>
+                        </div>
+                        <form id="orderForm">
+                            <div class="form-group">
+                                <label for="orderCustomerName">Customer Name *</label>
+                                <input type="text" id="orderCustomerName" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="orderPhone">Phone/WhatsApp *</label>
+                                <input type="text" id="orderPhone" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="orderProduct">Product *</label>
+                                <select id="orderProduct" required>
+                                    <option value="">Select a product</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="orderQuantity">Quantity *</label>
+                                <input type="number" id="orderQuantity" min="1" value="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="orderStatus">Status *</label>
+                                <select id="orderStatus" required>
+                                    <option value="pending">Pending</option>
+                                    <option value="confirmed">Confirmed</option>
+                                    <option value="processing">Processing</option>
+                                    <option value="shipped">Shipped</option>
+                                    <option value="delivered">Delivered</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="orderNotes">Notes</label>
+                                <textarea id="orderNotes" rows="3"></textarea>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="button" class="btn-secondary" id="cancelOrderBtn">Cancel</button>
+                                <button type="submit" class="btn-primary">Save Order</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Orders Filter and Actions -->
+                <div class="orders-filter">
+                    <input type="text" id="orderSearch" placeholder="Search orders by customer name, phone, or product...">
+                    <select id="statusFilter">
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="processing">Processing</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                    <input type="date" id="dateFrom" placeholder="From Date">
+                    <input type="date" id="dateTo" placeholder="To Date">
+                    <button id="clearOrderFilters" class="btn-secondary">Clear Filters</button>
+                </div>
+
+                <div class="orders-actions" style="margin-top: 1rem;">
+                    <button id="bulkDeleteOrders" class="btn-danger" style="display: none;">Delete Selected Orders</button>
+                    <button id="bulkUpdateStatus" class="btn-secondary" style="display: none;">Update Status</button>
+                    <select id="bulkStatusSelect" style="display: none;">
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="processing">Processing</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+
+                <!-- Orders List -->
+                <div id="ordersList" class="orders-table-container">
+                    <table class="orders-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="selectAllOrders"></th>
+                                <th>Order ID</th>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Phone</th>
+                                <th>Product</th>
+                                <th>Quantity</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTableBody">
+                            <!-- Orders will be loaded here dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check authentication before loading admin panel
+        const SESSION_KEY = 'artfromtheheart_admin_session';
+        const session = localStorage.getItem(SESSION_KEY);
+        if (!session) {
+            window.location.href = 'login.html';
+        } else {
+            const sessionData = JSON.parse(session);
+            const now = new Date().getTime();
+            if (now - sessionData.timestamp >= 24 * 60 * 60 * 1000) {
+                localStorage.removeItem(SESSION_KEY);
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
+    <script src="admin.js"></script>
+</body>
+</html>
+
