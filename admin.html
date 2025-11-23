@@ -124,8 +124,22 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="productImage">Image URL *</label>
-                                <input type="url" id="productImage" placeholder="https://..." required>
+                                <label>Product Images *</label>
+                                <div class="image-upload-section">
+                                    <div class="upload-options">
+                                        <label for="imageUpload" class="upload-btn">
+                                            <span>📁 Upload Images</span>
+                                            <input type="file" id="imageUpload" accept="image/*" multiple style="display: none;">
+                                        </label>
+                                        <span class="or-divider">OR</span>
+                                        <input type="url" id="imageUrlInput" placeholder="Add image URL (optional)" class="url-input">
+                                        <button type="button" id="addImageUrlBtn" class="btn-secondary-small">Add URL</button>
+                                    </div>
+                                    <div id="imagePreviewGallery" class="image-preview-gallery">
+                                        <!-- Preview images will be added here -->
+                                    </div>
+                                    <small class="helper-text">Upload multiple images or add URLs. First image will be the main image.</small>
+                                </div>
                             </div>
 
                             <div class="form-group">
@@ -331,19 +345,43 @@
 
     <script>
         // Check authentication before loading admin panel
-        const SESSION_KEY = 'artfromtheheart_admin_session';
-        const session = localStorage.getItem(SESSION_KEY);
-        if (!session) {
-            window.location.href = 'login.html';
-        } else {
-            const sessionData = JSON.parse(session);
-            const now = new Date().getTime();
-            if (now - sessionData.timestamp >= 24 * 60 * 60 * 1000) {
+        (function() {
+            const SESSION_KEY = 'artfromtheheart_admin_session';
+            let redirecting = false;
+            
+            try {
+                const session = localStorage.getItem(SESSION_KEY);
+                if (!session) {
+                    redirecting = true;
+                    window.location.replace('login.html');
+                    return;
+                }
+                
+                const sessionData = JSON.parse(session);
+                const now = new Date().getTime();
+                if (now - sessionData.timestamp >= 24 * 60 * 60 * 1000) {
+                    localStorage.removeItem(SESSION_KEY);
+                    redirecting = true;
+                    window.location.replace('login.html');
+                    return;
+                }
+                
+                // Session is valid, show the page
+                document.body.style.opacity = '1';
+            } catch (e) {
                 localStorage.removeItem(SESSION_KEY);
-                window.location.href = 'login.html';
+                if (!redirecting) {
+                    window.location.replace('login.html');
+                }
             }
-        }
+        })();
     </script>
+    <style>
+        body {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+    </style>
     <script src="admin.js"></script>
 </body>
 </html>

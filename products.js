@@ -105,7 +105,7 @@ function renderProducts() {
             return;
         }
         
-        container.innerHTML = products.map(product => {
+        container.innerHTML = products.map((product, index) => {
             // Build details HTML
             const details = [];
             if (product.materials) {
@@ -125,14 +125,46 @@ function renderProducts() {
             // Escape quotes in product name for onclick
             const escapedName = (product.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
             const productPrice = product.price || '$0.00';
-            const productImage = product.image || 'https://via.placeholder.com/400x400?text=No+Image';
             const productName = product.name || 'Unnamed Product';
             const productDesc = product.description || 'No description available.';
+            const animationDelay = (index * 0.1) + 0.1;
+            
+            // Support both old single image and new images array
+            let images = [];
+            if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+                images = product.images;
+            } else if (product.image) {
+                images = [product.image];
+            } else {
+                images = ['https://via.placeholder.com/400x400?text=No+Image'];
+            }
+            
+            // Create slider HTML
+            const sliderImages = images.map((img, imgIndex) => `
+                <div class="slider-image ${imgIndex === 0 ? 'active' : ''}" data-index="${imgIndex}">
+                    <img src="${img}" alt="${productName} - Image ${imgIndex + 1}" loading="lazy" onerror="this.src='https://via.placeholder.com/400x400?text=No+Image'">
+                </div>
+            `).join('');
+            
+            const sliderDots = images.length > 1 ? images.map((_, imgIndex) => `
+                <button class="slider-dot ${imgIndex === 0 ? 'active' : ''}" data-index="${imgIndex}" aria-label="Go to image ${imgIndex + 1}"></button>
+            `).join('') : '';
+            
+            const sliderNavigation = images.length > 1 ? `
+                <button class="slider-nav slider-prev" aria-label="Previous image">‹</button>
+                <button class="slider-nav slider-next" aria-label="Next image">›</button>
+            ` : '';
             
             return `
-                <div class="product-card">
+                <div class="product-card" style="animation-delay: ${animationDelay}s;" data-product-id="${product.id || index}">
                     <div class="product-image">
-                        <img src="${productImage}" alt="${productName}" onerror="this.src='https://via.placeholder.com/400x400?text=No+Image'">
+                        <div class="image-slider" data-slider-id="${product.id || index}">
+                            <div class="slider-container">
+                                ${sliderImages}
+                            </div>
+                            ${sliderNavigation}
+                            ${images.length > 1 ? `<div class="slider-dots">${sliderDots}</div>` : ''}
+                        </div>
                     </div>
                     <div class="product-info">
                         <h3 class="product-name">${productName}</h3>
@@ -148,6 +180,18 @@ function renderProducts() {
         }).join('');
         
         console.log(`Successfully rendered ${products.length} products`);
+        
+        // Trigger animations on product cards
+        const cards = container.querySelectorAll('.product-card');
+        cards.forEach((card, index) => {
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+        
+        // Initialize image sliders
+        initializeImageSliders();
     } catch (error) {
         console.error('Error rendering products:', error);
         const container = document.querySelector('.products-grid');
@@ -167,4 +211,120 @@ if (document.readyState === 'loading') {
 
 // Also try after a small delay to ensure everything is ready
 setTimeout(renderProducts, 100);
+
+// Image Slider Functionality
+function initializeImageSliders() {
+    const sliders = document.querySelectorAll('.image-slider');
+    
+    sliders.forEach(slider => {
+        const sliderId = slider.dataset.sliderId;
+        const images = slider.querySelectorAll('.slider-image');
+        const prevBtn = slider.querySelector('.slider-prev');
+        const nextBtn = slider.querySelector('.slider-next');
+        const dots = slider.querySelectorAll('.slider-dot');
+        
+        if (images.length <= 1) return; // No slider needed for single image
+        
+        let currentIndex = 0;
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        function showImage(index) {
+            // Update images
+            images.forEach((img, i) => {
+                img.classList.remove('active', 'prev', 'next');
+                if (i === index) {
+                    img.classList.add('active');
+                } else if (i < index) {
+                    img.classList.add('prev');
+                } else {
+                    img.classList.add('next');
+                }
+            });
+            
+            // Update dots
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+            
+            currentIndex = index;
+        }
+        
+        function nextImage() {
+            const next = (currentIndex + 1) % images.length;
+            showImage(next);
+        }
+        
+        function prevImage() {
+            const prev = (currentIndex - 1 + images.length) % images.length;
+            showImage(prev);
+        }
+        
+        // Button navigation
+        if (nextBtn) {
+            nextBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                nextImage();
+            });
+        }
+        
+        if (prevBtn) {
+            prevBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                prevImage();
+            });
+        }
+        
+        // Dot navigation
+        dots.forEach((dot, index) => {
+            dot.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showImage(index);
+            });
+        });
+        
+        // Touch/swipe support
+        slider.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+        }, { passive: true });
+        
+        slider.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].clientX;
+            handleSwipe();
+        }, { passive: true });
+        
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+            
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    nextImage(); // Swipe left - next
+                } else {
+                    prevImage(); // Swipe right - prev
+                }
+            }
+        }
+        
+        // Auto-play (optional - can be disabled)
+        let autoPlayInterval;
+        
+        function startAutoPlay() {
+            autoPlayInterval = setInterval(nextImage, 5000); // Change image every 5 seconds
+        }
+        
+        function stopAutoPlay() {
+            if (autoPlayInterval) {
+                clearInterval(autoPlayInterval);
+            }
+        }
+        
+        // Pause on hover
+        slider.addEventListener('mouseenter', stopAutoPlay);
+        slider.addEventListener('mouseleave', startAutoPlay);
+        
+        // Start auto-play
+        startAutoPlay();
+    });
+}
 

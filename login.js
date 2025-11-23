@@ -7,22 +7,35 @@ const ADMIN_PASSWORD = 'artfromtheheart2025';
 // Storage key for session
 const SESSION_KEY = 'artfromtheheart_admin_session';
 
+// Flag to prevent multiple redirects
+let redirecting = false;
+
 // Check if user is already logged in
 function checkSession() {
-    const session = localStorage.getItem(SESSION_KEY);
-    if (session) {
+    if (redirecting) return false;
+    
+    try {
+        const session = localStorage.getItem(SESSION_KEY);
+        if (!session) return false;
+        
         const sessionData = JSON.parse(session);
-        // Check if session is still valid (24 hours)
         const now = new Date().getTime();
+        
+        // Check if session is still valid (24 hours)
         if (now - sessionData.timestamp < 24 * 60 * 60 * 1000) {
             // Session valid, redirect to admin
-            window.location.href = 'admin.html';
+            redirecting = true;
+            window.location.replace('admin.html'); // Use replace instead of href to prevent back button issues
             return true;
         } else {
             // Session expired
             localStorage.removeItem(SESSION_KEY);
         }
+    } catch (e) {
+        // Invalid session data, clear it
+        localStorage.removeItem(SESSION_KEY);
     }
+    
     return false;
 }
 
@@ -37,16 +50,36 @@ function createSession() {
 
 // Handle login form submission
 document.addEventListener('DOMContentLoaded', function() {
+    // Make sure the page is visible immediately
+    document.body.style.opacity = '1';
+    const loginBox = document.querySelector('.login-box');
+    if (loginBox) {
+        loginBox.style.opacity = '1';
+    }
+    
+    // Check session only once after page is fully rendered
+    // Use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(function() {
+        setTimeout(function() {
+            if (!checkSession()) {
+                // Session check passed, form is already visible
+                const loginForm = document.getElementById('loginForm');
+                if (loginForm) {
+                    loginForm.style.opacity = '1';
+                }
+            }
+        }, 150);
+    });
+    
     const loginForm = document.getElementById('loginForm');
     const errorMessage = document.getElementById('errorMessage');
     
     if (!loginForm) return;
     
-    // Don't check session here - let the inline script in login.html handle it
-    // This prevents double-checking and flickering
-    
     loginForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        
+        if (redirecting) return;
         
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value;
@@ -61,10 +94,19 @@ document.addEventListener('DOMContentLoaded', function() {
         if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
             // Create session
             createSession();
-            // Small delay before redirect for better UX
+            redirecting = true;
+            
+            // Show loading state
+            const submitBtn = loginForm.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.textContent = 'Logging in...';
+                submitBtn.disabled = true;
+            }
+            
+            // Redirect after a brief moment
             setTimeout(function() {
-                window.location.href = 'admin.html';
-            }, 100);
+                window.location.replace('admin.html');
+            }, 200);
         } else {
             // Show error
             if (errorMessage) {

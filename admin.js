@@ -30,7 +30,7 @@ function checkAuthentication() {
 // Logout function
 function logout() {
     localStorage.removeItem(SESSION_KEY);
-    window.location.href = 'login.html';
+    window.location.replace('login.html');
 }
 
 // Initialize default products if none exist
@@ -42,7 +42,7 @@ function initializeDefaultProducts() {
                 id: '1',
                 name: 'Ceramic Moonlight Vase',
                 price: '$45.00',
-                image: 'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=400&h=400&fit=crop',
+                image: 'images/ceramic-vase.jpg',
                 description: 'A beautifully hand-thrown ceramic vase with a subtle moonlit glaze, perfect for displaying your favorite blooms.',
                 materials: 'Stoneware Clay',
                 size: '8" H × 5" W',
@@ -52,7 +52,7 @@ function initializeDefaultProducts() {
                 id: '2',
                 name: 'Earth Tones Throw Blanket',
                 price: '$85.00',
-                image: 'https://images.unsplash.com/photo-1606800053560-9869313e8e14?w=400&h=400&fit=crop',
+                image: 'images/throw-blanket.jpg',
                 description: 'Cozy handwoven throw blanket in warm earth tones, made from 100% organic cotton with a soft, luxurious feel.',
                 materials: 'Organic Cotton',
                 size: '50" × 60"',
@@ -62,74 +62,73 @@ function initializeDefaultProducts() {
                 id: '3',
                 name: 'Rustic Clay Bowl Set',
                 price: '$65.00',
-                image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=400&fit=crop',
+                image: 'images/clay-bowls.jpg',
                 description: 'A set of three handcrafted bowls in varying sizes, featuring a natural terracotta finish with subtle texture.',
                 materials: 'Terracotta Clay',
                 size: 'Set of 3 (S, M, L)',
                 details: ['Food Safe Glaze']
-            },
-            {
-                id: '4',
-                name: 'Sage & Lavender Candle',
-                price: '$28.00',
-                image: 'https://images.unsplash.com/photo-1601925260368-ae2f83d5ae4d?w=400&h=400&fit=crop',
-                description: 'Hand-poured soy candle with a calming blend of sage and lavender, housed in a handcrafted ceramic vessel.',
-                materials: 'Soy Wax',
-                size: 'Burn Time: 40 hours',
-                details: ['Natural Fragrance']
-            },
-            {
-                id: '5',
-                name: 'Macrame Wall Hanging',
-                price: '$55.00',
-                image: 'https://images.unsplash.com/photo-1601925260368-ae2f83d5ae4d?w=400&h=400&fit=crop',
-                description: 'Intricately knotted macrame wall art featuring natural cotton cord in a modern geometric pattern.',
-                materials: 'Natural Cotton',
-                size: '24" × 36"',
-                details: ['Hand Knotted']
-            },
-            {
-                id: '6',
-                name: 'Reclaimed Wood Serving Tray',
-                price: '$75.00',
-                image: 'https://images.unsplash.com/photo-1606800053560-9869313e8e14?w=400&h=400&fit=crop',
-                description: 'Beautifully crafted serving tray made from reclaimed barn wood, finished with food-safe natural oil.',
-                materials: 'Reclaimed Wood',
-                size: '18" × 12"',
-                details: ['Hand Sanded & Finished']
             }
         ];
         saveProducts(defaultProducts);
+        
+        // Create images directory if it doesn't exist
+        if (!localStorage.getItem('artfromtheheart_images')) {
+            localStorage.setItem('artfromtheheart_images', JSON.stringify({}));
+        }
     }
 }
 
 // Product Management Functions
 function getProducts() {
-    const productsJson = localStorage.getItem(STORAGE_KEY_PRODUCTS);
-    return productsJson ? JSON.parse(productsJson) : [];
+    try {
+        const productsJson = localStorage.getItem(STORAGE_KEY_PRODUCTS);
+        return productsJson ? JSON.parse(productsJson) : [];
+    } catch (e) {
+        console.error('Error parsing products:', e);
+        return [];
+    }
 }
 
 function saveProducts(products) {
-    localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(products));
+    try {
+        localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(products));
+        return true;
+    } catch (e) {
+        console.error('Error saving products:', e);
+        return false;
+    }
 }
 
 function addProduct(product) {
-    const products = getProducts();
-    product.id = Date.now().toString();
-    products.push(product);
-    saveProducts(products);
-    return product;
+    try {
+        const products = getProducts();
+        product.id = Date.now().toString();
+        product.images = product.images || [];
+        products.push(product);
+        return saveProducts(products) ? product : null;
+    } catch (e) {
+        console.error('Error adding product:', e);
+        return null;
+    }
 }
 
 function updateProduct(id, updatedProduct) {
-    const products = getProducts();
-    const index = products.findIndex(p => p.id === id);
-    if (index !== -1) {
-        products[index] = { ...updatedProduct, id };
-        saveProducts(products);
-        return true;
+    try {
+        const products = getProducts();
+        const index = products.findIndex(p => p.id === id);
+        if (index !== -1) {
+            // Preserve existing images if not provided in the update
+            if (!updatedProduct.images && products[index].images) {
+                updatedProduct.images = products[index].images;
+            }
+            products[index] = { ...products[index], ...updatedProduct, id };
+            return saveProducts(products);
+        }
+        return false;
+    } catch (e) {
+        console.error('Error updating product:', e);
+        return false;
     }
-    return false;
 }
 
 function deleteProduct(id) {
@@ -415,13 +414,17 @@ function renderProducts() {
     
     container.innerHTML = filteredProducts.map(product => {
         const isSelected = selectedProductIds.has(product.id);
+        // Support both old single image and new images array
+        const mainImage = (product.images && product.images.length > 0) ? product.images[0] : (product.image || 'https://via.placeholder.com/400x400?text=No+Image');
+        const imageCount = (product.images && Array.isArray(product.images)) ? product.images.length : (product.image ? 1 : 0);
         return `
         <div class="product-card-admin">
             <div style="position: relative;">
                 <input type="checkbox" style="position: absolute; top: 10px; left: 10px; z-index: 10;" 
                        ${isSelected ? 'checked' : ''} 
                        onchange="toggleProductSelection('${product.id}')">
-                <img src="${product.image}" alt="${product.name}" class="product-image-admin" onerror="this.src='https://via.placeholder.com/400x400?text=No+Image'">
+                <img src="${mainImage}" alt="${product.name}" class="product-image-admin" onerror="this.src='https://via.placeholder.com/400x400?text=No+Image'">
+                ${imageCount > 1 ? `<span class="image-count-badge">${imageCount} images</span>` : ''}
             </div>
             <div class="product-info-admin">
                 <h3 class="product-name-admin">${product.name}</h3>
@@ -524,19 +527,132 @@ function renderOrders() {
     updateBulkOrderActions();
 }
 
+// Product Images Management
+let productImages = []; // Array to store current product images (base64 or URLs)
+
+// Save image to local storage
+function saveImageToStorage(imageData, filename) {
+    try {
+        const images = JSON.parse(localStorage.getItem('artfromtheheart_images') || '{}');
+        images[filename] = imageData;
+        localStorage.setItem('artfromtheheart_images', JSON.stringify(images));
+        return `local:${filename}`;
+    } catch (e) {
+        console.error('Error saving image:', e);
+        return null;
+    }
+}
+
+// Get image from local storage
+function getImageFromStorage(key) {
+    try {
+        if (!key) return null;
+        if (key.startsWith('local:')) {
+            const images = JSON.parse(localStorage.getItem('artfromtheheart_images') || '{}');
+            return images[key.substring(6)] || null;
+        }
+        return key; // Return as is if it's a regular URL
+    } catch (e) {
+        console.error('Error getting image:', e);
+        return null;
+    }
+}
+
+function convertFileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+async function handleImageUpload(files) {
+    if (!files || files.length === 0) return;
+    
+    for (const file of Array.from(files)) {
+        if (!file.type.startsWith('image/')) continue;
+        
+        try {
+            const base64Data = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+            
+            const filename = `img_${Date.now()}_${file.name}`;
+            const imageKey = saveImageToStorage(base64Data, filename);
+            if (imageKey) {
+                productImages.push(imageKey);
+            }
+        } catch (e) {
+            console.error('Error processing image:', e);
+        }
+    }
+    
+    updateImagePreviewGallery();
+}
+
+function updateImagePreviewGallery() {
+    const gallery = document.getElementById('imagePreviewGallery');
+    if (!gallery) return;
+    
+    gallery.innerHTML = '';
+    
+    productImages.forEach((imgKey, index) => {
+        const imgContainer = document.createElement('div');
+        imgContainer.className = 'image-preview';
+        
+        const imgElement = document.createElement('img');
+        const imgSrc = getImageFromStorage(imgKey) || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iNDAwIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzk5OSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0yMSAxNnYzYTIgMiAwIDAgMS0yIDJINGEyIDIgMCAwIDEtMi0ydi0xM2EyIDIgMCAwIDEgMi0yaDkiPjwvcGF0aD48cG9seWxpbmUgcG9pbnRzPSI4LjUgMTEgMTIgOC41IDE1LjUgMTEgMTkgOCI+PC9wb2x5bGluZT48cG9seWdvbiBwb2ludHM9IjMgMTYgNyAxMiAxMSAxNiAxNyA5IDIxIDEzIDIxIDE2IDMgMTYiPjwvcG9seWdvbj48L3N2Zz4=';
+        imgElement.src = imgSrc;
+        imgElement.alt = 'Product preview';
+        imgElement.loading = 'lazy';
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'remove-image';
+        removeBtn.innerHTML = '&times;';
+        removeBtn.onclick = () => removeImage(index);
+        
+        imgContainer.appendChild(imgElement);
+        imgContainer.appendChild(removeBtn);
+        gallery.appendChild(imgContainer);
+    });
+    
+    // Show message if no images
+    if (productImages.length === 0) {
+        const noImages = document.createElement('div');
+        noImages.className = 'no-images';
+        noImages.textContent = 'No images uploaded yet';
 // Product Form Functions
 function openProductForm(productId = null) {
     const modal = document.getElementById('productFormModal');
     const form = document.getElementById('productForm');
     const title = document.getElementById('formTitle');
     
+    // Reset form and images
+    form.reset();
+    productImages = [];
+    updateImagePreviewGallery();
+    
+    // Set modal title and action
     if (productId) {
         const product = getProducts().find(p => p.id === productId);
         if (product) {
             document.getElementById('productId').value = product.id;
             document.getElementById('productName').value = product.name;
             document.getElementById('productPrice').value = product.price;
-            document.getElementById('productImage').value = product.image;
+            
+            // Load images - support both old single image and new images array
+            if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+                productImages = [...product.images];
+            } else if (product.image) {
+                // Legacy support: convert single image to array
+                productImages = [product.image];
+            }
+            
             document.getElementById('productDescription').value = product.description;
             document.getElementById('productMaterials').value = product.materials || '';
             document.getElementById('productSize').value = product.size || '';
@@ -544,380 +660,91 @@ function openProductForm(productId = null) {
             title.textContent = 'Edit Product';
         }
     } else {
-        form.reset();
-        document.getElementById('productId').value = '';
         title.textContent = 'Add New Product';
     }
     
-    modal.classList.add('active');
+    // Show modal with animation
+    modal.style.display = 'block';
+    document.body.classList.add('modal-open');
+    setTimeout(() => {
+        modal.classList.add('active');
+    }, 10);
+    
+    // Focus on first input
+    const firstInput = form.querySelector('input:not([type="hidden"]), textarea, select');
+    if (firstInput) {
+        setTimeout(() => firstInput.focus(), 100);
+    }
 }
 
 function closeProductForm() {
     document.getElementById('productFormModal').classList.remove('active');
+    document.body.classList.remove('modal-open');
+    setTimeout(() => {
+        document.getElementById('productFormModal').style.display = 'none';
+    }, 300);
     document.getElementById('productForm').reset();
+    productImages = [];
+    updateImagePreviewGallery();
 }
 
-function editProduct(id) {
-    openProductForm(id);
-}
-
-function deleteProductConfirm(id) {
-    const product = getProducts().find(p => p.id === id);
-    if (confirm(`Are you sure you want to delete "${product.name}"?`)) {
-        deleteProduct(id);
-        selectedProductIds.delete(id);
-        renderProducts();
-        updateDashboard();
-    }
-}
-
-// Order Form Functions
-function openOrderForm(orderId = null) {
-    const modal = document.getElementById('orderFormModal');
-    const form = document.getElementById('orderForm');
+// Product form submission
+document.getElementById('productForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
     
-    // Populate product dropdown
-    const productSelect = document.getElementById('orderProduct');
-    const products = getProducts();
-    productSelect.innerHTML = '<option value="">Select a product</option>' +
-        products.map(p => `<option value="${p.id}" data-price="${p.price}">${p.name} - ${p.price}</option>`).join('');
+    const form = e.target;
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalButtonText = submitButton.innerHTML;
     
-    if (orderId) {
-        const order = getOrders().find(o => o.id === orderId);
-        if (order) {
-            document.getElementById('orderCustomerName').value = order.customerName;
-            document.getElementById('orderPhone').value = order.phone;
-            document.getElementById('orderProduct').value = order.productId;
-            document.getElementById('orderQuantity').value = order.quantity;
-            document.getElementById('orderStatus').value = order.status;
-            document.getElementById('orderNotes').value = order.notes || '';
-            form.dataset.orderId = order.id;
-        }
-    } else {
-        form.reset();
-        delete form.dataset.orderId;
-    }
-    
-    modal.classList.add('active');
-}
-
-function closeOrderForm() {
-    document.getElementById('orderFormModal').classList.remove('active');
-    const form = document.getElementById('orderForm');
-    form.reset();
-    delete form.dataset.orderId;
-}
-
-function editOrder(id) {
-    openOrderForm(id);
-}
-
-function deleteOrderConfirm(id) {
-    const order = getOrders().find(o => o.id === id);
-    if (confirm(`Are you sure you want to delete order #${id.substring(0, 8)}?`)) {
-        deleteOrder(id);
-        selectedOrderIds.delete(id);
-        renderOrders();
-        updateDashboard();
-    }
-}
-
-// Event Listeners
-document.addEventListener('DOMContentLoaded', function() {
-    // Check authentication first
-    if (!checkAuthentication()) {
-        return; // Will redirect to login
-    }
-    
-    // Initialize default products
-    initializeDefaultProducts();
-    
-    // Tab switching
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const tabName = this.dataset.tab;
-            
-            // Update tab buttons
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Update tab content
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            document.getElementById(`${tabName}Tab`).classList.add('active');
-            
-            // Render appropriate content
-            if (tabName === 'dashboard') {
-                updateDashboard();
-            } else if (tabName === 'products') {
-                renderProducts();
-            } else if (tabName === 'orders') {
-                renderOrders();
-            }
-        });
-    });
-    
-    // Product form
-    document.getElementById('addProductBtn').addEventListener('click', () => openProductForm());
-    document.getElementById('closeModal').addEventListener('click', closeProductForm);
-    document.getElementById('cancelBtn').addEventListener('click', closeProductForm);
-    
-    document.getElementById('productForm').addEventListener('submit', function(e) {
-        e.preventDefault();
+    try {
+        // Disable submit button and show loading state
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<span class="spinner">Saving...</span>';
         
         const productId = document.getElementById('productId').value;
-        const product = {
+        const productData = {
             name: document.getElementById('productName').value,
             price: document.getElementById('productPrice').value,
-            image: document.getElementById('productImage').value,
             description: document.getElementById('productDescription').value,
             materials: document.getElementById('productMaterials').value,
             size: document.getElementById('productSize').value,
-            details: document.getElementById('productDetails').value
-                .split('\n')
-                .filter(d => d.trim())
+            details: document.getElementById('productDetails').value.split('\n').filter(d => d.trim() !== ''),
+            images: [...productImages]
         };
         
+        // Basic validation
+        if (!productData.name || !productData.price || !productData.description) {
+            throw new Error('Please fill in all required fields');
+        }
+        
+        if (productData.images.length === 0) {
+            throw new Error('Please add at least one product image');
+        }
+        
+        // Save product
+        let success = false;
         if (productId) {
-            updateProduct(productId, product);
+            success = updateProduct(productId, productData);
         } else {
-            addProduct(product);
+            const newProduct = addProduct(productData);
+            success = !!newProduct;
         }
         
-        closeProductForm();
-        renderProducts();
-        updateDashboard();
-    });
-    
-    // Order form
-    document.getElementById('addOrderBtn').addEventListener('click', () => openOrderForm());
-    document.getElementById('closeOrderModal').addEventListener('click', closeOrderForm);
-    document.getElementById('cancelOrderBtn').addEventListener('click', closeOrderForm);
-    
-    document.getElementById('orderForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const orderId = this.dataset.orderId;
-        const productId = document.getElementById('orderProduct').value;
-        const product = getProducts().find(p => p.id === productId);
-        
-        if (!product) {
-            alert('Please select a product');
-            return;
-        }
-        
-        const order = {
-            customerName: document.getElementById('orderCustomerName').value,
-            phone: document.getElementById('orderPhone').value,
-            productId: productId,
-            productName: product.name,
-            productPrice: product.price,
-            quantity: parseInt(document.getElementById('orderQuantity').value),
-            status: document.getElementById('orderStatus').value,
-            notes: document.getElementById('orderNotes').value
-        };
-        
-        if (orderId) {
-            updateOrder(orderId, order);
+        if (success) {
+            renderProducts();
+            closeProductForm();
+            showNotification('Product saved successfully!', 'success');
         } else {
-            addOrder(order);
+            throw new Error('Failed to save product');
         }
-        
-        closeOrderForm();
-        renderOrders();
-        updateDashboard();
-    });
-    
-    // Order search and filter
-    document.getElementById('orderSearch')?.addEventListener('input', renderOrders);
-    document.getElementById('statusFilter')?.addEventListener('change', renderOrders);
-    document.getElementById('dateFrom')?.addEventListener('change', renderOrders);
-    document.getElementById('dateTo')?.addEventListener('change', renderOrders);
-    document.getElementById('clearOrderFilters')?.addEventListener('click', function() {
-        document.getElementById('orderSearch').value = '';
-        document.getElementById('statusFilter').value = '';
-        document.getElementById('dateFrom').value = '';
-        document.getElementById('dateTo').value = '';
-        selectedOrderIds.clear();
-        renderOrders();
-    });
-    
-    // Product search
-    document.getElementById('productSearch')?.addEventListener('input', renderProducts);
-    document.getElementById('clearProductSearch')?.addEventListener('click', function() {
-        document.getElementById('productSearch').value = '';
-        selectedProductIds.clear();
-        renderProducts();
-    });
-    
-    // Bulk product operations
-    document.getElementById('bulkDeleteProducts')?.addEventListener('click', function() {
-        if (selectedProductIds.size === 0) return;
-        if (confirm(`Are you sure you want to delete ${selectedProductIds.size} product(s)?`)) {
-            selectedProductIds.forEach(id => deleteProduct(id));
-            selectedProductIds.clear();
-            renderProducts();
-        }
-    });
-    
-    // Bulk order operations
-    document.getElementById('bulkDeleteOrders')?.addEventListener('click', function() {
-        if (selectedOrderIds.size === 0) return;
-        if (confirm(`Are you sure you want to delete ${selectedOrderIds.size} order(s)?`)) {
-            selectedOrderIds.forEach(id => deleteOrder(id));
-            selectedOrderIds.clear();
-            renderOrders();
-            updateDashboard();
-        }
-    });
-    
-    document.getElementById('bulkUpdateStatus')?.addEventListener('click', function() {
-        if (selectedOrderIds.size === 0) return;
-        const newStatus = document.getElementById('bulkStatusSelect').value;
-        if (confirm(`Update ${selectedOrderIds.size} order(s) to "${newStatus}"?`)) {
-            selectedOrderIds.forEach(id => {
-                const order = getOrders().find(o => o.id === id);
-                if (order) {
-                    updateOrder(id, { ...order, status: newStatus });
-                }
-            });
-            selectedOrderIds.clear();
-            renderOrders();
-            updateDashboard();
-        }
-    });
-    
-    document.getElementById('selectAllOrders')?.addEventListener('change', function(e) {
-        selectAllOrders(e.target.checked);
-    });
-    
-    // Dashboard
-    document.getElementById('refreshDashboard')?.addEventListener('click', updateDashboard);
-    document.getElementById('exportAllData')?.addEventListener('click', function() {
-        const data = {
-            products: getProducts(),
-            orders: getOrders(),
-            exportDate: new Date().toISOString()
-        };
-        exportToJSON(data, `artfromtheheart_backup_${new Date().toISOString().split('T')[0]}.json`);
-    });
-    
-    // Settings - Export
-    document.getElementById('exportProducts')?.addEventListener('click', function() {
-        exportToJSON(getProducts(), `products_${new Date().toISOString().split('T')[0]}.json`);
-    });
-    
-    document.getElementById('exportOrders')?.addEventListener('click', function() {
-        exportToJSON(getOrders(), `orders_${new Date().toISOString().split('T')[0]}.json`);
-    });
-    
-    document.getElementById('exportOrdersCSV')?.addEventListener('click', exportOrdersToCSV);
-    
-    // Settings - Import
-    document.getElementById('importData')?.addEventListener('click', function() {
-        document.getElementById('importFile').click();
-    });
-    
-    document.getElementById('importFile')?.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            try {
-                const data = JSON.parse(event.target.result);
-                if (data.products) {
-                    if (confirm('Import products? This will replace all existing products.')) {
-                        saveProducts(data.products);
-                        renderProducts();
-                        updateDashboard();
-                        alert('Products imported successfully!');
-                    }
-                }
-                if (data.orders) {
-                    if (confirm('Import orders? This will replace all existing orders.')) {
-                        saveOrders(data.orders);
-                        renderOrders();
-                        updateDashboard();
-                        alert('Orders imported successfully!');
-                    }
-                }
-            } catch (error) {
-                alert('Error importing data: ' + error.message);
-            }
-        };
-        reader.readAsText(file);
-        e.target.value = '';
-    });
-    
-    // Settings - Change Password
-    document.getElementById('changePasswordForm')?.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const currentPassword = document.getElementById('currentPassword').value;
-        const newPassword = document.getElementById('newPassword').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
-        const errorDiv = document.getElementById('passwordError');
-        
-        // Note: In a real app, this would be handled server-side
-        // For now, we'll just show a message (actual password change would need backend)
-        if (newPassword !== confirmPassword) {
-            errorDiv.textContent = 'New passwords do not match';
-            errorDiv.style.display = 'block';
-            return;
-        }
-        
-        if (newPassword.length < 6) {
-            errorDiv.textContent = 'Password must be at least 6 characters';
-            errorDiv.style.display = 'block';
-            return;
-        }
-        
-        // In a real implementation, you'd send this to a server
-        alert('Password change functionality requires backend integration. For now, update the password in login.js file.');
-        this.reset();
-        errorDiv.style.display = 'none';
-    });
-    
-    // Settings - Danger Zone
-    document.getElementById('clearAllData')?.addEventListener('click', function() {
-        if (confirm('Are you sure you want to clear ALL data? This cannot be undone!')) {
-            if (confirm('This will delete ALL products and orders. Are you absolutely sure?')) {
-                localStorage.removeItem(STORAGE_KEY_PRODUCTS);
-                localStorage.removeItem(STORAGE_KEY_ORDERS);
-                selectedProductIds.clear();
-                selectedOrderIds.clear();
-                initializeDefaultProducts();
-                renderProducts();
-                renderOrders();
-                updateDashboard();
-                alert('All data cleared. Default products restored.');
-            }
-        }
-    });
-    
-    document.getElementById('resetToDefaults')?.addEventListener('click', function() {
-        if (confirm('Reset all products to defaults? This will replace all existing products.')) {
-            initializeDefaultProducts();
-            renderProducts();
-            updateDashboard();
-            alert('Products reset to defaults.');
-        }
-    });
-    
-    // Logout button
-    document.getElementById('logoutBtn')?.addEventListener('click', function() {
-        if (confirm('Are you sure you want to logout?')) {
-            logout();
-        }
-    });
-    
-    // Close modals on outside click
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.classList.remove('active');
-            }
-        });
-    });
+    } catch (error) {
+        console.error('Error saving product:', error);
+        showNotification(error.message || 'Error saving product. Please try again.', 'error');
+    } finally {
+        // Re-enable submit button
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalButtonText;
+    }
     
     // Initial render
     renderProducts();
