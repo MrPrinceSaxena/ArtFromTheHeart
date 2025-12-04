@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+#Cloudinary
+VITE_CLOUDINARY_CLOUD_NAME=dhiifxbi9
+VITE_CLOUDINARY_UPLOAD_PRESET=artfromtheheart_unsigned

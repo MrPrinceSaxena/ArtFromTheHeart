@@ -1,9 +1,11 @@
-import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
-import { products } from '@/data/products';
-import { ProductCard } from '@/components/products/ProductCard';
+import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
+import { ProductCard } from "@/components/products/ProductCard";
+import { useStorefrontData } from "@/hooks/useStorefrontData";
 
 export function FeaturedProducts() {
+  const { products } = useStorefrontData();
+
   const featuredProducts = products.filter((p) => p.isFeatured).slice(0, 4);
 
   return (
@@ -39,6 +41,13 @@ export function FeaturedProducts() {
               <ProductCard product={product} />
             </div>
           ))}
+
+          {featuredProducts.length === 0 && (
+            <p className="col-span-full text-center text-sm text-muted-foreground py-6">
+              No featured products yet. Mark some items as featured in the admin
+              panel.
+            </p>
+          )}
         </div>
       </div>
     </section>

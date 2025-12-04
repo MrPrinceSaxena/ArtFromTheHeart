@@ -4,15 +4,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { EnquiryCartProvider } from "@/hooks/useEnquiryCart";
-import Index from "./pages/Index";
-import Shop from "./pages/Shop";
-import ProductDetail from "./pages/ProductDetail";
-import About from "./pages/About";
-import CustomOrders from "./pages/CustomOrders";
-import Contact from "./pages/Contact";
-import Cart from "./pages/Cart";
-import Admin from "./pages/Admin";
-import NotFound from "./pages/NotFound";
+import Index from "../pages/Index";
+import Shop from "../pages/Shop";
+import ProductDetail from "../pages/ProductDetail";
+import About from "../pages/About";
+import CustomOrders from "../pages/CustomOrders";
+import Contact from "../pages/Contact";
+import Cart from "../pages/Cart";
+import Admin from "../pages/Admin";
+import NotFound from "../pages/NotFound";
 
 const queryClient = new QueryClient();
 

@@ -1,7 +1,9 @@
-import { categories } from '@/data/products';
-import { CategoryCard } from '@/components/products/CategoryCard';
+import { CategoryCard } from "@/components/products/CategoryCard";
+import { useStorefrontData } from "@/hooks/useStorefrontData";
 
 export function CategoriesSection() {
+  const { categories } = useStorefrontData();
+
   return (
     <section className="py-16 md:py-24 section-pattern">
       <div className="container mx-auto px-4">

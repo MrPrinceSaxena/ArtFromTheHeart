@@ -1,7 +1,8 @@
-import { Star, Quote } from 'lucide-react';
-import { testimonials } from '@/data/products';
+import { Star, Quote } from "lucide-react";
+import { useStorefrontData } from "@/hooks/useStorefrontData";
 
 export function TestimonialsSection() {
+  const { testimonials } = useStorefrontData();
   const featuredTestimonials = testimonials.filter((t) => t.isFeatured);
 
   return (
@@ -27,7 +28,7 @@ export function TestimonialsSection() {
             >
               {/* Quote Icon */}
               <Quote className="absolute top-6 right-6 w-8 h-8 text-primary/10" />
-              
+
               {/* Rating */}
               <div className="flex gap-1 mb-4">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -35,18 +36,18 @@ export function TestimonialsSection() {
                     key={i}
                     className={`w-4 h-4 ${
                       i < testimonial.rating
-                        ? 'fill-accent text-accent'
-                        : 'text-muted'
+                        ? "fill-accent text-accent"
+                        : "text-muted"
                     }`}
                   />
                 ))}
               </div>
-              
+
               {/* Review Text */}
               <p className="text-foreground mb-6 leading-relaxed">
                 "{testimonial.review}"
               </p>
-              
+
               {/* Author */}
               <div className="flex items-center gap-3">
                 <img
@@ -56,11 +57,20 @@ export function TestimonialsSection() {
                 />
                 <div>
                   <p className="font-semibold">{testimonial.name}</p>
-                  <p className="text-sm text-muted-foreground">{testimonial.location}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {testimonial.location}
+                  </p>
                 </div>
               </div>
             </div>
           ))}
+
+          {featuredTestimonials.length === 0 && (
+            <p className="col-span-full text-center text-sm text-muted-foreground py-6">
+              No featured testimonials yet. Mark some testimonials as featured in
+              the admin panel.
+            </p>
+          )}
         </div>
       </div>
     </section>
